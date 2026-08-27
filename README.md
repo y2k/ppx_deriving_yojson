@@ -40,9 +40,11 @@ _deriving yojson_ generates two functions per type:
 ``` ocaml
 # #require "ppx_deriving_yojson";;
 # type ty = .. [@@deriving yojson];;
-val ty_of_yojson : Yojson.Safe.t -> (ty, string) Result.result
+val ty_of_yojson : Yojson.Safe.t -> ty Ppx_deriving_yojson_runtime.error_or
 val ty_to_yojson : ty -> Yojson.Safe.t
 ```
+
+where `'a Ppx_deriving_yojson_runtime.error_or` is `('a, string) result`.
 
 When the deserializing function returns <code>Error loc</code>, `loc` points to the point in the JSON hierarchy where the error has occurred.
 
