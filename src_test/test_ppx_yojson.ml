@@ -49,6 +49,8 @@ module Legacy_result = struct
   type t = (int, string) Result.result [@@deriving yojson]
 end
 type xres_n = (int list, string) result [@@deriving show, yojson]
+type xres_msg = Loaded of (int, string) result | Error of string
+[@@deriving show, yojson]
 type xt = int * int   [@@deriving show, yojson]
 
 type 'a p = 'a option
@@ -159,6 +161,12 @@ let test_result_alias_result _ctxt =
 let test_result_nested _ctxt =
   assert_roundtrip pp_xres_n xres_n_to_yojson xres_n_of_yojson
                    (Ok [1; 2]) "[\"Ok\", [1, 2]]"
+
+let test_result_in_variant _ctxt =
+  assert_roundtrip pp_xres_msg xres_msg_to_yojson xres_msg_of_yojson
+                   (Loaded (Ok 42)) "[\"Loaded\", [\"Ok\", 42]]";
+  assert_roundtrip pp_xres_msg xres_msg_to_yojson xres_msg_of_yojson
+                   (Loaded (Result.Error "foo")) "[\"Loaded\", [\"Error\", \"foo\"]]"
 
 let test_result_err _ctxt =
   assert_failure pp_xres xres_of_yojson
@@ -642,6 +650,7 @@ let suite = "Test ppx_yojson" >::: [
     "test_result_alias" >:: test_result_alias;
     "test_result_alias_result" >:: test_result_alias_result;
     "test_result_nested" >:: test_result_nested;
+    "test_result_in_variant" >:: test_result_in_variant;
     "test_result_err" >:: test_result_err;
     "test_poly"      >:: test_poly;
     "test_list"      >:: test_list;
