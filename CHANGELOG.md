@@ -1,3 +1,15 @@
+unreleased
+----------
+
+  * Add builtin support for `result` (and its `Result.t` and legacy
+    `Result.result` aliases), encoded like any other variant: `Ok x` becomes
+    `["Ok", x]` and `Error e` becomes `["Error", e]`.
+
+    As with every other builtin type, the builtin encoding now takes precedence
+    over a `result_to_yojson`/`result_of_yojson` defined in the user's scope, so
+    code relying on such a definition changes its wire format. Use the
+    `[@to_yojson]`/`[@of_yojson]` attributes to keep a custom encoding.
+
 3.10.0
 ------
 

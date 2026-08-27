@@ -104,6 +104,12 @@ and ser_expr_of_only_typ ~quoter typ =
     [%expr fun x -> `List (Array.to_list (Array.map [%e ser_expr_of_typ typ] x))]
   | [%type: [%t? typ] option] ->
     [%expr function None -> `Null | Some x -> [%e ser_expr_of_typ typ] x]
+  | [%type: ([%t? ok], [%t? err]) result]
+  | [%type: ([%t? ok], [%t? err]) Result.t]
+  | [%type: ([%t? ok], [%t? err]) Result.result] ->
+    [%expr function
+           | Ok x    -> `List [`String "Ok";    [%e ser_expr_of_typ ok] x]
+           | Error x -> `List [`String "Error"; [%e ser_expr_of_typ err] x]]
   | [%type: Yojson.Safe.json]
   | [%type: Yojson.Safe.t] -> [%expr fun x -> x]
   | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
@@ -214,6 +220,13 @@ and desu_expr_of_only_typ ~quoter ~path typ =
     [%expr function
            | `Null -> Ok None
            | x     -> [%e desu_expr_of_typ ~path typ] x >>= fun x -> Ok (Some x)]
+  | [%type: ([%t? ok], [%t? err]) result]
+  | [%type: ([%t? ok], [%t? err]) Result.t]
+  | [%type: ([%t? ok], [%t? err]) Result.result] ->
+    decode' [[%pat? `List [`String "Ok"; x]],
+               [%expr [%e desu_expr_of_typ ~path ok] x >|= fun x -> Ok x];
+             [%pat? `List [`String "Error"; x]],
+               [%expr [%e desu_expr_of_typ ~path err] x >|= fun x -> Error x]]
   | [%type: [%t? typ] list]  ->
     decode [%pat? `List xs]
            [%expr map_bind [%e desu_expr_of_typ ~path typ] [] xs]

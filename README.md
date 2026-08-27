@@ -40,9 +40,11 @@ _deriving yojson_ generates two functions per type:
 ``` ocaml
 # #require "ppx_deriving_yojson";;
 # type ty = .. [@@deriving yojson];;
-val ty_of_yojson : Yojson.Safe.t -> (ty, string) Result.result
+val ty_of_yojson : Yojson.Safe.t -> ty Ppx_deriving_yojson_runtime.error_or
 val ty_to_yojson : ty -> Yojson.Safe.t
 ```
+
+where `'a Ppx_deriving_yojson_runtime.error_or` is `('a, string) result`.
 
 When the deserializing function returns <code>Error loc</code>, `loc` points to the point in the JSON hierarchy where the error has occurred.
 
@@ -55,7 +57,7 @@ Using the option `[@@deriving yojson { exn = true }]` will also generate a funct
 Semantics
 ---------
 
-_deriving yojson_ handles tuples, records, normal and polymorphic variants; builtin types: `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes`, `ref`, `list`, `array`, `option` and their `Mod.t` aliases.
+_deriving yojson_ handles tuples, records, normal and polymorphic variants; builtin types: `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes`, `ref`, `list`, `array`, `option`, `result` and their `Mod.t` aliases.
 
 The following table summarizes the correspondence between OCaml types and JSON values:
 
@@ -70,6 +72,7 @@ The following table summarizes the correspondence between OCaml types and JSON v
 | A tuple                | Array      |                                  |
 | `ref`                  | 'a         |                                  |
 | `option`               | Null or 'a |                                  |
+| `result`               | Array      | `["Ok", 'a]` or `["Error", 'b]`  |
 | A record               | Object     |                                  |
 | `Yojson.Safe.t`        | any        | Identity transformation          |
 | `unit`                 | Null       |                                  |
