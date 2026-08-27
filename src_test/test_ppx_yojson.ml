@@ -41,6 +41,14 @@ type xr = int ref     [@@deriving show, yojson]
 type xo = int option  [@@deriving show, yojson]
 type xl = int list    [@@deriving show, yojson]
 type xa = int array   [@@deriving show, yojson]
+type xres = (int, string) result   [@@deriving show, yojson]
+type xres_t = (int, string) Result.t [@@deriving yojson]
+(* [Result.result] is the legacy compat spelling exported by the runtime *)
+module Legacy_result = struct
+  open Ppx_deriving_yojson_runtime
+  type t = (int, string) Result.result [@@deriving yojson]
+end
+type xres_n = (int list, string) result [@@deriving show, yojson]
 type xt = int * int   [@@deriving show, yojson]
 
 type 'a p = 'a option
@@ -129,6 +137,36 @@ let test_option _ctxt =
                    (Some 42) "42";
   assert_roundtrip pp_xo xo_to_yojson xo_of_yojson
                    None "null"
+
+let test_result _ctxt =
+  assert_roundtrip pp_xres xres_to_yojson xres_of_yojson
+                   (Ok 42) "[\"Ok\", 42]";
+  assert_roundtrip pp_xres xres_to_yojson xres_of_yojson
+                   (Error "foo") "[\"Error\", \"foo\"]"
+
+let test_result_alias _ctxt =
+  assert_roundtrip pp_xres xres_t_to_yojson xres_t_of_yojson
+                   (Ok 42) "[\"Ok\", 42]";
+  assert_roundtrip pp_xres xres_t_to_yojson xres_t_of_yojson
+                   (Error "foo") "[\"Error\", \"foo\"]"
+
+let test_result_alias_result _ctxt =
+  assert_roundtrip pp_xres Legacy_result.to_yojson Legacy_result.of_yojson
+                   (Ok 42) "[\"Ok\", 42]";
+  assert_roundtrip pp_xres Legacy_result.to_yojson Legacy_result.of_yojson
+                   (Error "foo") "[\"Error\", \"foo\"]"
+
+let test_result_nested _ctxt =
+  assert_roundtrip pp_xres_n xres_n_to_yojson xres_n_of_yojson
+                   (Ok [1; 2]) "[\"Ok\", [1, 2]]"
+
+let test_result_err _ctxt =
+  assert_failure pp_xres xres_of_yojson
+                 "Test_ppx_yojson.xres" "42";
+  assert_failure pp_xres xres_of_yojson
+                 "Test_ppx_yojson.xres" "[\"Nope\", 42]";
+  assert_failure pp_xres xres_of_yojson
+                 "Test_ppx_yojson.xres" "[\"Ok\", \"notanint\"]"
 
 let test_poly _ctxt =
   assert_roundtrip pp_xo
@@ -600,6 +638,11 @@ let suite = "Test ppx_yojson" >::: [
     "test_string"    >:: test_string;
     "test_ref"       >:: test_ref;
     "test_option"    >:: test_option;
+    "test_result"    >:: test_result;
+    "test_result_alias" >:: test_result_alias;
+    "test_result_alias_result" >:: test_result_alias_result;
+    "test_result_nested" >:: test_result_nested;
+    "test_result_err" >:: test_result_err;
     "test_poly"      >:: test_poly;
     "test_list"      >:: test_list;
     "test_array"     >:: test_array;
